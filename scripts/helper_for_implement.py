@@ -10,7 +10,7 @@ import numpy as np
 
 # -*- Calculate Error -*- #
 def calculte_error(y,tx,w):
-    e = y[:,np.newaxis] - tx.dot(w)
+    e = y - tx.dot(w)
     return e
 #-------------------------------------------------------#
 
@@ -64,7 +64,7 @@ def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):
 #-------------------------------------------------------#
 
 # -*- Calculate Stochastic Gradient -*- #
-def compute_stoch_gradient(y, tx, w):
+def compute_stoch_gradient(y, tx, w, batch_size):
     """Compute a stochastic gradient from just few examples n and their corresponding y_n labels."""
     batch_size=100
     for minibatch_y, minibatch_tx in batch_iter(y, tx, batch_size):
@@ -93,7 +93,7 @@ def build_poly(x, degree):
 
 # -*- Calculate sigmoid -*- #
 def sigmoid(t):
-    return np.exp(t) / (1 + np.exp(t))
+    return 1. / (1. + np.exp(-t))
 #-------------------------------------------------------#
 
 

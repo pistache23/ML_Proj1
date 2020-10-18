@@ -46,4 +46,9 @@ def fix_outlier(tx):
         right_boundary = mean + 2 * std
         current_col[current_col < left_boundary] = left_boundary
         current_col[current_col > right_boundary] = right_boundary        
+ 
         
+def normalization(x):
+    min_x = np.min(x, axis=0)
+    max_x = np.max(x, axis=0)
+    return (x - min_x) / (max_x - min_x)

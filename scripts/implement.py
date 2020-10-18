@@ -13,6 +13,7 @@ def least_squares_GD(y, tx, initial_w, max_iters, gamma):
     ws = []
     losses = []
     w = initial_w
+    threshold = 1e-8
     
     for n_iter in range(max_iters):
         ws.append(w)
@@ -23,6 +24,8 @@ def least_squares_GD(y, tx, initial_w, max_iters, gamma):
         
         # store w and loss
         losses.append(loss)
+        if (len(losses) > 1) and (np.abs(losses[-1] - losses[-2]) < threshold):
+            break 
         #print("Gradient Descent({bi}/{ti}): loss={l}, w0={w0}, w1={w1}".format(
             #  bi=n_iter, ti=max_iters - 1, l=loss, w0=w[0], w1=w[1]))
 
@@ -40,12 +43,12 @@ def stochastic_gradient_descent(y, tx, initial_w, batch_size, max_iters, gamma):
     
     for n_iter in range(max_iters):
         ws.append(w)
-        y_shuffle, tx_shuffle, stoch_gradient = compute_stoch_gradient(y, tx, w)
+        y_shuffle, tx_shuffle, stoch_gradient = compute_stoch_gradient(y, tx, w,batch_size)
         loss = calculate_mse(y_shuffle, tx_shuffle, w)
         
         w = w - gamma * stoch_gradient
         losses.append(loss)
-        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+        if (len(losses) > 1) and (np.abs(losses[-1] - losses[-2]) < threshold):
             break # converge
             
     return losses[-1], ws[-1]
@@ -55,7 +58,10 @@ def stochastic_gradient_descent(y, tx, initial_w, batch_size, max_iters, gamma):
 
 def least_squares(y, tx):
     """calculate the least squares."""
-    opt_w = np.linalg.inv((tx.T @ tx)) @ tx.T @ y
+    coefficient = tx.T.dot(tx)
+    constant = tx.T.dot(y)
+    
+    opt_w = np.linalg.solve(coefficient, constant)
     loss = calculate_mse(y,tx,opt_w)
     
     return loss, opt_w
@@ -66,8 +72,11 @@ def least_squares(y, tx):
 # -*- Ridge Regression-*- #
 def ridge_regression(y, tx, lambda_):
     """implement ridge regression."""
-    opt_w = np.linalg.inv(tx.T @ tx + 2 * len(y) * lambda_ * np.eye(tx.shape[1])) @ tx.T @ y
-    loss = calculate_mse(y,tx,w)
+    coefficient = tx.T.dot(tx) + 2 * len(y) * lambda_ * np.identity(tx.shape[1])
+    constant = tx.T.dot(y)
+    
+    opt_w = np.linalg.solve(coefficient, constant)
+    loss = calculate_mse(y,tx,opt_w)
     return loss, opt_w
 
 #-------------------------------------------------------#
@@ -79,17 +88,18 @@ def logistic_regression(y, tx, initial_w, max_iters, gamma):
     losses = []
     ws = []
     w = initial_w
-    
-    for iter in range(max_iter):
+    yy = y.copy()
+    yy[yy == -1] = 0
+    for iter in range(max_iters):
         # get loss and update w.
-        loss = calculate_logistic_loss(y, tx, w)
+        loss = calculate_logistic_loss(yy, tx, w)
         ws.append(w)
         losses.append(loss)
-        gradient = calculate_logistic_gradient(y, tx, w)
+        gradient = calculate_logistic_gradient(yy, tx, w)
         w = w - gamma * gradient
         if (len(losses) > 1) and (np.abs(losses[-1] - losses[-2]) < threshold):
             break
-    return ws[-1], losses[-1]
+    return losses[-1], ws[-1]
 #-------------------------------------------------------#
 
 
@@ -99,18 +109,19 @@ def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
     losses = []
     ws = []
     w = initial_w
-    
-    for iter in range(max_iter):
+    yy = y.copy()
+    yy[yy == -1] = 0
+    for iter in range(max_iters):
         # get loss and update w.
-        loss = calculate_penal_logistic_loss(y, tx, w, lambda_)
-        gradient = calculate_penal_logistic_gradient(y, tx, w, lambda_)
+        loss = calculate_penal_logistic_loss(yy, tx, w, lambda_)
+        gradient = calculate_penal_logistic_gradient(yy, tx, w, lambda_)
         ws.append(w)
         losses.append(loss)
         w = w - gamma * gradient
         
-        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+        if (len(losses) > 1) and (np.abs(losses[-1] - losses[-2]) < threshold):
             break
-    return ws[-1], losses[-1]
+    return losses[-1], ws[-1]
 
 #-------------------------------------------------------#
 
