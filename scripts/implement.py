@@ -17,7 +17,7 @@ def least_squares_GD(y, tx, initial_w, max_iters, gamma):
     for n_iter in range(max_iters):
         ws.append(w)
         gradient = calculate_gradient(y, tx, w)
-        loss = compute_loss(y, tx, w)
+        loss = calculate_mse(y, tx, w)
       
         w = w - gamma*gradient
         
@@ -33,14 +33,15 @@ def least_squares_GD(y, tx, initial_w, max_iters, gamma):
 
 def stochastic_gradient_descent(y, tx, initial_w, batch_size, max_iters, gamma):
     """Stochastic gradient descent algorithm."""
+    threshold = 1e-8
     ws = []
     losses = []
     w = initial_w
     
     for n_iter in range(max_iters):
         ws.append(w)
-        y_shuffle, tx_shuffle, stoch_gradient = compute_stoch_gradient(y, tx, w, batch_size)
-        loss = compute_loss(y_shuffle, tx_shuffle, w)
+        y_shuffle, tx_shuffle, stoch_gradient = compute_stoch_gradient(y, tx, w)
+        loss = calculate_mse(y_shuffle, tx_shuffle, w)
         
         w = w - gamma * stoch_gradient
         losses.append(loss)
@@ -55,7 +56,7 @@ def stochastic_gradient_descent(y, tx, initial_w, batch_size, max_iters, gamma):
 def least_squares(y, tx):
     """calculate the least squares."""
     opt_w = np.linalg.inv((tx.T @ tx)) @ tx.T @ y
-    loss = calculate_mse(y,tx,w)
+    loss = calculate_mse(y,tx,opt_w)
     
     return loss, opt_w
 

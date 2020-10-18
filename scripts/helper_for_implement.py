@@ -66,10 +66,11 @@ def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):
 # -*- Calculate Stochastic Gradient -*- #
 def compute_stoch_gradient(y, tx, w):
     """Compute a stochastic gradient from just few examples n and their corresponding y_n labels."""
+    batch_size=100
     for minibatch_y, minibatch_tx in batch_iter(y, tx, batch_size):
         y_shuffle = minibatch_y
         tx_shuffle = minibatch_tx
-    stoch_gradient = compute_gradient(y_shuffle, tx_shuffle, w)
+    stoch_gradient = calculate_gradient(y_shuffle, tx_shuffle, w)
     
     return y_shuffle, tx_shuffle, stoch_gradient
 #-------------------------------------------------------#
