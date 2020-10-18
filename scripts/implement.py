@@ -12,11 +12,11 @@ def least_squares_GD(y, tx, initial_w, max_iters, gamma):
     # Define parameters to store w and loss
     ws = []
     losses = []
-    w = initial_w.reshape((-1,1))
+    #w = initial_w.reshape((-1,1))
     
     for n_iter in range(max_iters):
         ws.append(w)
-        gradient = compute_gradient(y, tx, w)
+        gradient = caklculate_gradient(y, tx, w)
         loss = compute_loss(y, tx, w)
       
         w = w - gamma*gradient
@@ -35,7 +35,7 @@ def stochastic_gradient_descent(y, tx, initial_w, batch_size, max_iters, gamma):
     """Stochastic gradient descent algorithm."""
     ws = []
     losses = []
-    w = initial_w.reshape((-1,1))
+    #w = initial_w.reshape((-1,1))
     
     for n_iter in range(max_iters):
         ws.append(w)
