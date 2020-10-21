@@ -112,7 +112,7 @@ def calculate_logistic_gradient(y, tx, w):
 # -*- Calculate Penalized Logistic Loss -*- #
 def calculate_penal_logistic_loss(y, tx, w, lambda_):
     loss = calculate_logistic_loss(y, tx, w) + (lambda_ / 2) * (w.T @ w)
-    return loss
+    return loss[0][0]
 #-------------------------------------------------------#
 
 # -*- Calculate Penalized Logistic Gradient -*- #
@@ -124,7 +124,8 @@ def calculate_penal_logistic_gradient(y, tx, w, lambda_):
 
 
 # -*- Cross Validation -*- #
-def build_k_indices(y, k_fold, seed=1): #split data into k sets
+
+def build_k_indices(y, k_fold, seed=1):
     """build k indices for k-fold."""
     num_row = y.shape[0]
     interval = int(num_row / k_fold)
@@ -134,42 +135,70 @@ def build_k_indices(y, k_fold, seed=1): #split data into k sets
                  for k in range(k_fold)]
     return np.array(k_indices)
 
-def cross_validation(y, x, k_indices, k, lambda_): # to test the kth set
+
+def cross_validation(y, x, k_indices, k, lambda_, degree,ridge): # if ridge=True, this is used to test ridge regression, otherwise this is used to test reg-logistic regression
     """return the loss of ridge regression."""
     
     y_test = y[k_indices[k,:]]
     x_test = x[k_indices[k,:]]
     
     k_indicess = np.delete(k_indices, k, axis = 0) #to choose the other (k-1) rows
-    y_train = y[k_indicess].ravel()
-    x_train = x[k_indicess].ravel()
+    y_train = y[k_indicess]
+    x_train = x[k_indicess]
     
-    opt_w = ridge_regression(y_train, x_train, lambda_)
-    
-    loss_tr = np.sqrt(compute_mse(y_train, x_train, opt_w))
-    loss_te = np.sqrt(compute_mse(y_test, x_test, opt_w))
-    
-    return loss_tr, loss_te
+    # to transfer the dimension into 2 dimentions
+    y_train =  y_train.reshape((4*y_train.shape[1]))
+    x_train = x_train.reshape((4*x_train.shape[1],x_train.shape[2]))
 
-def cross_validation_(y, x):
-    seed = 1
-    k_fold = 5  #5-fold CV
-    lambdas = np.logspace(-4, 0, 30) #10^-4 to 10^0, total 30 points
-    # split data in k fold
-    k_indices = build_k_indices(y, k_fold, seed)
-    # define lists to store the loss of training data and test data
-    rmse_tr = []
-    rmse_te = []
- 
-    for lambda_ in lambdas:
-        k_tr = 0
-        k_te = 0
-        for k in range(k_fold):
-            loss_tr, loss_te = cross_validation(y, x, k_indices, k, lambda_, degree)
-            k_tr = k_tr + loss_tr
-            k_te = k_te + loss_te
-        k_tr = k_tr/4
-        k_te = k_te/4
-        rmse_tr.append(k_tr)
-        rmse_te.append(k_te)
+    if degree > 0:
+        x_test = build_poly(x_test, degree)
+        x_train = build_poly(x_train, degree)
+
+    if ridge:
+        _,opt_w = ridge_regression(y_train.reshape((-1,1)), x_train, lambda_)
+        loss_te = calculate_rmse(y_test.reshape((-1,1)),x_test,opt_w)
+        
+    if not ridge:
+        _,opt_w = reg_logistic_regression(y_train.reshape((-1,1)), x_train, lambda_, np.ones((x_train.shape[1],1)),3000,0.0007)
+        
+        yy = y_test.copy()
+        yy[yy == -1] = 0
+        loss_te = calculate_penal_logistic_loss(yy.reshape((-1,1)),x_test,opt_w, lambda_)
+        
+    return  loss_te
 #-------------------------------------------------------#
+
+# -*- Prediction -*- #
+
+def prediction_report_4(y, tx, w_best): # to predict the first four models, except for logistic and reg-logistic regression
+    
+    predictions = tx @ w_best
+    predictions[:][predictions >= 0] = 1
+    predictions[:][predictions < 0] = -1
+    
+    percentage_model_4 = []
+    for i in range(4):
+        correct_percentage = 100*np.sum(predictions[i] == y) / float(len(predictions[i]))
+        percentage_model_4.append(correct_percentage)
+        
+    return percentage_model_4
+
+def change_labels_logistic(y): # to convert the -1 lable into 0 label to adapt the sigmoid districution
+    y_change = y.copy()
+    y_change[y_change == -1] = 0
+    return y_change
+
+def prediction_logistic_report(y, tx, w_best): #to predict the last two logistic models
+    
+
+    predictions = tx @ w_best
+    predictions[:][predictions >= 0.5] = 1
+    predictions[:][predictions < 0.5] = 0
+    y_log = change_labels_logistic(y)
+        
+    percentage_model_logistic = []
+    for i in range(4,6):
+        correct_percentage = 100*np.sum(predictions[i] == y_log) / float(len(predictions[i]))
+        percentage_model_logistic.append(correct_percentage)
+        
+    return percentage_model_logistic
